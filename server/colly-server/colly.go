@@ -72,6 +72,8 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 				resourceUrl:  resourceUrl,
 				resourceName: resourceName,
 				savePath:     path.Join(basePath, currentUrl.Path),
+				wg:           &sync.WaitGroup{},
+				keyPrefix:    "#EXT-X-KEY:",
 			}).scrapy()
 			if err != nil {
 				return

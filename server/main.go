@@ -15,7 +15,15 @@ import (
 )
 
 func main() {
-	crawlByConfig()
+	crawlAll()
+}
+
+func crawlAll() {
+	cs := &collyserver.CollyServer{
+		Host:      "https://rouva1.xyz/home",
+		LogDriver: clogs.NewCLog(),
+	}
+	cs.Run(path.Join(vars.BasePath, vars.Config.Video.SavePath))
 }
 
 func crawlByOne(videoName, videoHost string, wg *sync.WaitGroup) {
