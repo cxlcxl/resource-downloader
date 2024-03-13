@@ -20,7 +20,7 @@ func main() {
 
 func crawlAll() {
 	cs := &collyserver.CollyServer{
-		Host:      "https://rouva1.xyz/home",
+		Host:      "http://www.baidu.com",
 		LogDriver: clogs.NewCLog(),
 	}
 	cs.Run(path.Join(vars.BasePath, vars.Config.Video.SavePath))
