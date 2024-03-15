@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"path"
@@ -12,6 +11,8 @@ import (
 	"videocapture/utils/clogs"
 	"videocapture/vars"
 	_ "videocapture/vars"
+
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -23,6 +24,7 @@ func crawlAll() {
 		Host:      "http://www.baidu.com",
 		LogDriver: clogs.NewCLog(),
 	}
+
 	cs.Run(path.Join(vars.BasePath, vars.Config.Video.SavePath))
 }
 

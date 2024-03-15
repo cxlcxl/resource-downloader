@@ -2,12 +2,14 @@ package collyserver
 
 import (
 	"fmt"
-	"github.com/gocolly/colly/v2"
 	"net/url"
 	"path"
 	"strings"
 	"sync"
 	"videocapture/utils"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/gocolly/colly/v2"
 )
 
 func (cs *CollyServer) Run(basePath string) (err error) {
@@ -74,6 +76,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 				savePath:     path.Join(basePath, currentUrl.Path),
 				wg:           &sync.WaitGroup{},
 				keyPrefix:    "#EXT-X-KEY:",
+				c:            resty.New(),
 			}).scrapy()
 			if err != nil {
 				return
@@ -110,6 +113,7 @@ func (cs *CollyServer) startScrapy(currentUrl *url.URL, basePath string) (err er
 		isSingle:     true,
 		wg:           &sync.WaitGroup{},
 		keyPrefix:    "#EXT-X-KEY:",
+		c:            resty.New(),
 	}).scrapy()
 
 	return

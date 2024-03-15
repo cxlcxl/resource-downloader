@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"net/url"
 	"os"
 	"path"
@@ -15,6 +14,9 @@ import (
 	"videocapture/merge"
 	"videocapture/utils"
 	"videocapture/utils/clogs"
+
+	"github.com/go-resty/resty/v2"
+	ants "github.com/panjf2000/ants/v2"
 )
 
 type resource struct {
@@ -31,6 +33,7 @@ type resource struct {
 	key          []byte
 	iv           []byte // 0x26ee0b9b8f4aec3b1ebf867f263a6063
 	isFetchKey   bool
+	c            *resty.Client
 }
 
 type VideoApiResponse struct {
@@ -43,8 +46,7 @@ type Video struct {
 }
 
 func (res *resource) scrapy() (err error) {
-	client := resty.New()
-	resp, err := client.R().EnableTrace().Get(res.resourceUrl)
+	resp, err := res.c.R().EnableTrace().Get(res.resourceUrl)
 	if err != nil || resp.StatusCode() != 200 {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url":        res.resourceUrl,
@@ -67,9 +69,7 @@ func (res *resource) scrapy() (err error) {
 }
 
 func (res *resource) scrapyM3u8() (err error) {
-	client := resty.New()
-
-	resp, err := client.R().EnableTrace().Get(res.video.VideoUrl)
+	resp, err := res.c.R().EnableTrace().Get(res.video.VideoUrl)
 	if err != nil || resp.StatusCode() != 200 {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url":        res.video.VideoUrl,
@@ -103,8 +103,7 @@ func (res *resource) scrapyM3u8() (err error) {
 }
 
 func (res *resource) scrapyM3u8Video(m3u8Url string) {
-	client := resty.New()
-	resp, err := client.R().EnableTrace().Get(m3u8Url)
+	resp, err := res.c.R().EnableTrace().Get(m3u8Url)
 	if err != nil {
 		return
 	}
@@ -125,38 +124,20 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 		}, "路径检查失败 [scrapy]: "+utils.ParseError(err))
 		return
 	}
-
 	go res.writeM3u8File(resp.Body())
+
+	defer ants.Release()
 
 	videoIdx := 0
 	for _, m3u8 := range videoM3u8s {
 		if strings.HasPrefix(m3u8, "#") {
-			if strings.HasPrefix(m3u8, res.keyPrefix) {
-				keys := strings.Split(m3u8[len(res.keyPrefix):], ",")
-				for _, key := range keys {
-					if strings.HasPrefix(key, "METHOD=") {
-						res.method = key[len("METHOD="):]
-					}
-					if strings.HasPrefix(key, "URI=") {
-						res.keyUri = key[len("URI=")+1 : len(key)-1]
-					}
-					if strings.HasPrefix(key, "IV=") {
-						iv, err := hex.DecodeString(key[len("IV=")+2:])
-						if err != nil {
-							res.logDriver.ErrLog(map[string]interface{}{
-								"key": key[len("IV="):],
-							}, "IV 获取失败 [scrapyM3u8Video]: "+utils.ParseError(err))
-							break
-						}
-						res.iv = iv
-					}
-				}
+			if err = res.readEncryptionKey(m3u8); err != nil {
+				break
 			}
 			continue
 		} else {
 			if !res.isFetchKey {
-				err = res.fetchKey(m3u8)
-				if err != nil {
+				if err = res.fetchKey(m3u8); err != nil {
 					res.logDriver.ErrLog(map[string]interface{}{
 						"url": m3u8,
 					}, "key 获取失败 [fetchKey]: "+utils.ParseError(err))
@@ -179,6 +160,31 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 		}, "路径检查失败 [scrapy]: "+utils.ParseError(err))
 		return
 	}
+
+	return
+}
+
+func (res *resource) readEncryptionKey(m3u8 string) (err error) {
+	if strings.HasPrefix(m3u8, res.keyPrefix) {
+		keys := strings.Split(m3u8[len(res.keyPrefix):], ",")
+		for _, key := range keys {
+			if strings.HasPrefix(key, "METHOD=") {
+				res.method = key[len("METHOD="):]
+			}
+			if strings.HasPrefix(key, "URI=") {
+				res.keyUri = key[len("URI=")+1 : len(key)-1]
+			}
+			if strings.HasPrefix(key, "IV=") {
+				res.iv, err = hex.DecodeString(key[len("IV=")+2:])
+				if err != nil {
+					res.logDriver.ErrLog(map[string]interface{}{
+						"key": key[len("IV="):],
+					}, "IV 获取失败 [scrapyM3u8Video]: "+utils.ParseError(err))
+					break
+				}
+			}
+		}
+	}
 	return
 }
 
@@ -190,9 +196,8 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 		res.wg.Done()
 		return
 	}
-	client := resty.New()
 
-	resp, err := client.R().EnableTrace().Get(u)
+	resp, err := res.c.R().EnableTrace().Get(u)
 	if err != nil || resp.StatusCode() != 200 {
 		time.Sleep(time.Millisecond * 500)
 		res.scrapyPart(idx, u, retryTimes+1, err)
@@ -231,8 +236,6 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 
 	res.logDriver.InfoLog(map[string]interface{}{"filename": filename}, "Success")
 	res.wg.Done()
-
-	return
 }
 
 func (res *resource) fetchKey(m3u8Url string) (err error) {
@@ -244,8 +247,7 @@ func (res *resource) fetchKey(m3u8Url string) (err error) {
 	split := strings.Split(u.Path, "/")
 	host := fmt.Sprintf("%s://%s/%s/%s", u.Scheme, u.Host, strings.Join(split[0:len(split)-1], "/"), res.keyUri)
 
-	client := resty.New()
-	resp, err := client.R().EnableTrace().Get(host)
+	resp, err := res.c.R().EnableTrace().Get(host)
 	if err != nil || resp.StatusCode() != 200 {
 		err = fmt.Errorf("key 获取失败 [fetchKey]: " + utils.ParseError(err))
 		return
