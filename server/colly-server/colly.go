@@ -23,7 +23,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 			err = fmt.Errorf("单视频抓取请设置名称 [SingleName]")
 			return
 		}
-		return cs.startScrapy(u, basePath)
+		return cs.startSpider(u, basePath)
 	}
 
 	c := colly.NewCollector(
@@ -77,7 +77,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 				wg:           &sync.WaitGroup{},
 				keyPrefix:    "#EXT-X-KEY:",
 				c:            resty.New(),
-			}).scrapy()
+			}).spider()
 			if err != nil {
 				return
 			}
@@ -91,7 +91,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 	return
 }
 
-func (cs *CollyServer) startScrapy(currentUrl *url.URL, basePath string) (err error) {
+func (cs *CollyServer) startSpider(currentUrl *url.URL, basePath string) (err error) {
 	resourceUrl, err := url.JoinPath(
 		fmt.Sprintf("%s://%s", currentUrl.Scheme, currentUrl.Host),
 		"api",
@@ -114,7 +114,7 @@ func (cs *CollyServer) startScrapy(currentUrl *url.URL, basePath string) (err er
 		wg:           &sync.WaitGroup{},
 		keyPrefix:    "#EXT-X-KEY:",
 		c:            resty.New(),
-	}).scrapy()
+	}).spider()
 
 	return
 }

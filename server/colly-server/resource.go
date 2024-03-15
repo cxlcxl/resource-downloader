@@ -45,13 +45,13 @@ type Video struct {
 	VideoUrl    string `json:"videoUrl"`
 }
 
-func (res *resource) scrapy() (err error) {
+func (res *resource) spider() (err error) {
 	resp, err := res.c.R().EnableTrace().Get(res.resourceUrl)
 	if err != nil || resp.StatusCode() != 200 {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url":        res.resourceUrl,
 			"StatusCode": resp.StatusCode(),
-		}, "地址请求失败 [scrapy]: "+utils.ParseError(err))
+		}, "地址请求失败 [spider]: "+utils.ParseError(err))
 		return
 	}
 
@@ -65,16 +65,16 @@ func (res *resource) scrapy() (err error) {
 	}
 
 	res.video = videoResponse.Video
-	return res.scrapyM3u8()
+	return res.spiderM3u8()
 }
 
-func (res *resource) scrapyM3u8() (err error) {
+func (res *resource) spiderM3u8() (err error) {
 	resp, err := res.c.R().EnableTrace().Get(res.video.VideoUrl)
 	if err != nil || resp.StatusCode() != 200 {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url":        res.video.VideoUrl,
 			"StatusCode": resp.StatusCode(),
-		}, "地址请求失败 [scrapyM3u8]: "+utils.ParseError(err))
+		}, "地址请求失败 [spiderM3u8]: "+utils.ParseError(err))
 		return
 	}
 	videoM3u8 := resp.String()
@@ -90,11 +90,11 @@ func (res *resource) scrapyM3u8() (err error) {
 				res.logDriver.ErrLog(map[string]interface{}{
 					"url":        res.video.VideoUrl,
 					"StatusCode": resp.StatusCode(),
-				}, "地址解析失败 [scrapyM3u8]: "+utils.ParseError(err))
+				}, "地址解析失败 [spiderM3u8]: "+utils.ParseError(err))
 				continue
 			}
 			m3u8Url := videoUrlParse.ResolveReference(u)
-			res.scrapyM3u8Video(m3u8Url.String())
+			res.spiderM3u8Video(m3u8Url.String())
 			break
 		}
 	}
@@ -102,7 +102,7 @@ func (res *resource) scrapyM3u8() (err error) {
 	return
 }
 
-func (res *resource) scrapyM3u8Video(m3u8Url string) {
+func (res *resource) spiderM3u8Video(m3u8Url string) {
 	resp, err := res.c.R().EnableTrace().Get(m3u8Url)
 	if err != nil {
 		return
@@ -111,7 +111,7 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url":        m3u8Url,
 			"StatusCode": resp.StatusCode(),
-		}, "地址请求失败 [scrapyM3u8Video]: "+utils.ParseError(err))
+		}, "地址请求失败 [spiderM3u8Video]: "+utils.ParseError(err))
 		return
 	}
 
@@ -121,7 +121,7 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 	if err = res.checkDir(); err != nil {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"path": res.savePath,
-		}, "路径检查失败 [scrapy]: "+utils.ParseError(err))
+		}, "路径检查失败 [spiderM3u8Video]: "+utils.ParseError(err))
 		return
 	}
 	go res.writeM3u8File(resp.Body())
@@ -147,7 +147,7 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 
 			res.wg.Add(1)
 			videoIdx++
-			go res.scrapyPart(videoIdx, parseUriChart(m3u8), 0, nil)
+			go res.spiderPart(videoIdx, parseUriChart(m3u8), 0, nil)
 		}
 	}
 
@@ -157,7 +157,7 @@ func (res *resource) scrapyM3u8Video(m3u8Url string) {
 	if err = merge.Merge(res.savePath); err != nil {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"path": res.savePath,
-		}, "路径检查失败 [scrapy]: "+utils.ParseError(err))
+		}, "路径检查失败 [spiderPart]: "+utils.ParseError(err))
 		return
 	}
 
@@ -179,7 +179,7 @@ func (res *resource) readEncryptionKey(m3u8 string) (err error) {
 				if err != nil {
 					res.logDriver.ErrLog(map[string]interface{}{
 						"key": key[len("IV="):],
-					}, "IV 获取失败 [scrapyM3u8Video]: "+utils.ParseError(err))
+					}, "IV 获取失败 [spiderM3u8Video]: "+utils.ParseError(err))
 					break
 				}
 			}
@@ -188,11 +188,11 @@ func (res *resource) readEncryptionKey(m3u8 string) (err error) {
 	return
 }
 
-func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
+func (res *resource) spiderPart(idx int, u string, retryTimes int, err error) {
 	if retryTimes > 100 {
 		res.logDriver.ErrLog(map[string]interface{}{
 			"url": u,
-		}, "片段下载失败 [scrapyPart]: "+utils.ParseError(err))
+		}, "片段下载失败 [spiderPart]: "+utils.ParseError(err))
 		res.wg.Done()
 		return
 	}
@@ -200,7 +200,7 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 	resp, err := res.c.R().EnableTrace().Get(u)
 	if err != nil || resp.StatusCode() != 200 {
 		time.Sleep(time.Millisecond * 500)
-		res.scrapyPart(idx, u, retryTimes+1, err)
+		res.spiderPart(idx, u, retryTimes+1, err)
 		return
 	}
 
@@ -208,7 +208,7 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0777)
 	if err != nil {
 		time.Sleep(time.Millisecond * 500)
-		res.scrapyPart(idx, u, retryTimes+1, err)
+		res.spiderPart(idx, u, retryTimes+1, err)
 		return
 	}
 	defer f.Close()
@@ -220,7 +220,7 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 			res.logDriver.ErrLog(map[string]interface{}{
 				"url":   u,
 				"index": idx,
-			}, "AesDecrypt 失败 [scrapyPart]: "+utils.ParseError(err))
+			}, "AesDecrypt 失败 [spiderPart]: "+utils.ParseError(err))
 			res.wg.Done()
 			return
 		}
@@ -230,7 +230,7 @@ func (res *resource) scrapyPart(idx int, u string, retryTimes int, err error) {
 	_, err = f.Write(entryBytes)
 	if err != nil {
 		time.Sleep(time.Millisecond * 500)
-		res.scrapyPart(idx, u, retryTimes+1, err)
+		res.spiderPart(idx, u, retryTimes+1, err)
 		return
 	}
 
