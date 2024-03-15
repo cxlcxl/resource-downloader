@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"videocapture/utils"
+	"videocapture/utils/clogs"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
@@ -116,5 +117,13 @@ func (cs *CollyServer) startSpider(currentUrl *url.URL, basePath string) (err er
 		c:            resty.New(),
 	}).spider()
 
+	return
+}
+
+func (c *Colly) CrawlOne(name string, driver *clogs.CLog) (err error) {
+	return
+}
+
+func (c *Colly) MultiCrawl() (err error) {
 	return
 }

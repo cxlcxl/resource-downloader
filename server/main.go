@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 	collyserver "videocapture/server/colly-server"
+	"videocapture/server/spider"
 	"videocapture/utils/clogs"
 	"videocapture/vars"
 	_ "videocapture/vars"
@@ -16,7 +17,8 @@ import (
 )
 
 func main() {
-	crawlAll()
+	_spider := spider.NewSpider(&collyserver.Colly{})
+	_spider.CrawlOne().Error()
 }
 
 func crawlAll() {

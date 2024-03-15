@@ -11,6 +11,11 @@ import (
 	"videocapture/utils/clogs"
 )
 
+type Colly struct {
+	Host      string
+	LogDriver clogs.LogInterface
+}
+
 type CollyServer struct {
 	Host       string
 	LogDriver  clogs.LogInterface
