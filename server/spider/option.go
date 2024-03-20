@@ -1,0 +1,28 @@
+package spider
+
+type Option func(*Spider)
+
+func SetAsync(limitGos int) Option {
+	return func(s *Spider) {
+		s.LimitGos = limitGos
+		s.Async = true
+	}
+}
+
+func SetBodyMaxSize(maxSize int) Option {
+	return func(s *Spider) {
+		s.maxSize = maxSize
+	}
+}
+
+func SetUserAgent(us string) Option {
+	return func(s *Spider) {
+		s.userAgent = us
+	}
+}
+
+func SetOnce() Option {
+	return func(s *Spider) {
+		s.isOnce = true
+	}
+}

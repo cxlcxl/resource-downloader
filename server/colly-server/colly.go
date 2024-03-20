@@ -7,24 +7,23 @@ import (
 	"strings"
 	"sync"
 	"videocapture/utils"
-	"videocapture/utils/clogs"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
 )
 
-func (cs *CollyServer) Run(basePath string) (err error) {
-	u, err := url.Parse(cs.Host)
+func (s *Spider) Run(basePath string) (err error) {
+	u, err := url.Parse(s.sk.GetHost())
 	if err != nil {
 		err = fmt.Errorf("抓取地址错误：%s", err.Error())
 		return
 	}
-	if cs.IsSingle {
-		if cs.SingleName == "" {
+	if s.IsSingle {
+		if s.SingleName == "" {
 			err = fmt.Errorf("单视频抓取请设置名称 [SingleName]")
 			return
 		}
-		return cs.startSpider(u, basePath)
+		return s.startCrawl(u, basePath)
 	}
 
 	c := colly.NewCollector(
@@ -48,11 +47,11 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 	c.OnResponse(func(res *colly.Response) {
 		// 视频详情地址
 		currentUrl := res.Request.URL
-		if strings.HasPrefix(currentUrl.String(), "https://rouva1.xyz/v/") {
+		if strings.HasPrefix(currentUrl.String(), "") {
 			resourceUrl, resourceName := "", ""
 			resourceName = ByRegexp(string(res.Body))
 			if resourceName == "" {
-				cs.LogDriver.WarnLog(map[string]interface{}{
+				s.logDriver.WarnLog(map[string]interface{}{
 					"requestUrl": currentUrl.Path,
 				}, "没有匹配到视频名称")
 				return
@@ -63,7 +62,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 				currentUrl.Path,
 			)
 			if err != nil {
-				cs.LogDriver.ErrLog(map[string]interface{}{
+				s.logDriver.ErrLog(map[string]interface{}{
 					"requestUrl":   currentUrl.Path,
 					"resourceName": resourceName,
 				}, "视频地址拼接失败："+utils.ParseError(err))
@@ -71,7 +70,7 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 			}
 
 			err = (&resource{
-				logDriver:    cs.LogDriver,
+				logDriver:    s.logDriver,
 				resourceUrl:  resourceUrl,
 				resourceName: resourceName,
 				savePath:     path.Join(basePath, currentUrl.Path),
@@ -85,31 +84,31 @@ func (cs *CollyServer) Run(basePath string) (err error) {
 		}
 	})
 
-	_ = c.Visit(cs.Host)
+	_ = c.Visit(s.sk.GetHost())
 
 	c.Wait()
 
 	return
 }
 
-func (cs *CollyServer) startSpider(currentUrl *url.URL, basePath string) (err error) {
+func (s *Spider) startCrawl(currentUrl *url.URL, basePath string) (err error) {
 	resourceUrl, err := url.JoinPath(
 		fmt.Sprintf("%s://%s", currentUrl.Scheme, currentUrl.Host),
 		"api",
 		currentUrl.Path,
 	)
 	if err != nil {
-		cs.LogDriver.ErrLog(map[string]interface{}{
+		s.logDriver.ErrLog(map[string]interface{}{
 			"requestUrl":   currentUrl.Path,
-			"resourceName": cs.SingleName,
+			"resourceName": s.SingleName,
 		}, "视频地址拼接失败："+utils.ParseError(err))
 		return
 	}
 
 	err = (&resource{
-		logDriver:    cs.LogDriver,
+		logDriver:    s.logDriver,
 		resourceUrl:  resourceUrl,
-		resourceName: cs.SingleName,
+		resourceName: s.SingleName,
 		savePath:     path.Join(basePath, currentUrl.Path),
 		isSingle:     true,
 		wg:           &sync.WaitGroup{},
@@ -117,13 +116,5 @@ func (cs *CollyServer) startSpider(currentUrl *url.URL, basePath string) (err er
 		c:            resty.New(),
 	}).spider()
 
-	return
-}
-
-func (c *Colly) CrawlOne(name string, driver *clogs.CLog) (err error) {
-	return
-}
-
-func (c *Colly) MultiCrawl() (err error) {
 	return
 }
