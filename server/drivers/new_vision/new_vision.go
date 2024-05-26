@@ -40,22 +40,26 @@ func (nv *NewVision) IsRequest(host string) bool {
 	if _, ok := nv.downloadLogs[logKey]; ok {
 		return false
 	}
-	ok, _ := nvSpiderPages(host)
+	ok, _ := nv.nvSpiderPages(host, "visit")
 	return ok
 }
 
-func nvSpiderPages(host string) (bool, spider.SpiderType) {
+func (nv *NewVision) nvSpiderPages(host, t string) (bool, spider.SpiderType) {
 	//if ok, _ := regexp.MatchString(`^(\/vplay\/)([a-z0-9\-]+)(\.html)$`, host); ok {
 	//	return true, PageVideoUrl
 	//}
-	if ok, _ := regexp.MatchString(`^(\/video\/)([a-z0-9]+)(\.html)$`, host); ok {
-		return true, PageVideoInfo
+	if t == "visit" {
+		return true, 0
+	} else {
+		if ok, _ := regexp.MatchString(`^(\/video\/)([a-z0-9]+)(\.html)$`, host); ok {
+			return true, PageVideoInfo
+		}
+		return false, 0
 	}
-	return false, 0
 }
 
 func (nv *NewVision) ParseResource(u *url.URL, body []byte, c interface{}) (*spider.Resource, bool, error) {
-	if ok, pt := nvSpiderPages(u.Path); ok {
+	if ok, pt := nv.nvSpiderPages(u.Path, "crawl"); ok {
 		fmt.Println("正在抓取地址：", u.String())
 		r, err := goquery.NewDocumentFromReader(bytes.NewReader(body))
 		if err != nil {
