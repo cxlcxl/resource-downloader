@@ -1,0 +1,7 @@
+logs:
+  dir: './storages/logs'
+  log_name: 'log'
+  max_backups: 3
+
+video:
+  save_path: './storages/video'

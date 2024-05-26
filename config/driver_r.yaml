@@ -1,0 +1,5 @@
+host: ""
+resource_url_contains: ""
+
+logs:
+  dir: "r_video"
