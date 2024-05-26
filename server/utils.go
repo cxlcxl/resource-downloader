@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -48,6 +49,9 @@ func pkcs7UnPadding(data []byte) ([]byte, error) {
 }
 
 func LoadDownloaded(filepath string) (l map[string]bool) {
+	if _, err := os.Stat(filepath); err != nil {
+		_ = os.MkdirAll(path.Dir(filepath), 0777)
+	}
 	l = make(map[string]bool)
 	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_RDONLY, 0777)
 	if err != nil {
@@ -77,6 +81,5 @@ func RecordDownload(s, filepath string) {
 
 	defer f.Close()
 
-	f.WriteString(s)
-	f.WriteString("\n")
+	f.WriteString(s + "\n")
 }

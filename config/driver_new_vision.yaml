@@ -1,0 +1,5 @@
+host: "https://www.6080yy3.com/"
+resource_url_contains: ""
+
+logs:
+  dir: "new_vision"

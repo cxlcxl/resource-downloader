@@ -5,3 +5,5 @@ type Resource struct {
 	Title       string
 	SavePath    string
 }
+
+type SpiderType int

@@ -3,6 +3,7 @@ package config
 type Config struct {
 	Logs  *Logs  `yaml:"logs"`
 	Video *Video `yaml:"video"`
+	Db    *Db    `yaml:"db"`
 }
 
 type Logs struct {
@@ -13,4 +14,8 @@ type Logs struct {
 
 type Video struct {
 	SavePath string `yaml:"save_path"`
+}
+
+type Db struct {
+	Dsn string `yaml:"dsn"`
 }

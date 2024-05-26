@@ -5,3 +5,6 @@ logs:
 
 video:
   save_path: './storages/video'
+
+db:
+  dsn: "user:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=true&loc=Local"

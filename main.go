@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"path"
+	"videocapture/core/model"
+	"videocapture/server/drivers/new_vision"
 	"videocapture/server/drivers/r_video"
 	"videocapture/server/spider"
 	"videocapture/utils/clogs"
@@ -15,13 +17,18 @@ func main() {
 
 func crawlVideoSite() {
 	logDriver := clogs.NewCLog()
-	err := spider.NewSpider(
-		&r_video.R{
+	db, err := model.NewDB()
+	if err != nil {
+		log.Fatalln("数据库连接失败：", err)
+	}
+	err = spider.NewSpider(
+		&new_vision.NewVision{
 			Log:             logDriver,
-			DownloadLogFile: path.Join(vars.BasePath, vars.Config.Video.SavePath, "r", "log.log"),
+			DownloadLogFile: path.Join(vars.BasePath, vars.Config.Video.SavePath, "nv", "log.log"),
 		},
 		logDriver,
-	).CrawlOne("单个url地址")
+		spider.UseDb(db),
+	).Start()
 	log.Println(err)
 }
 

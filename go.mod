@@ -9,10 +9,18 @@ require (
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/driver/mysql v1.5.6
+	gorm.io/gorm v1.25.10
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.1 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+)
+
+require (
+	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/antchfx/htmlquery v1.3.0 // indirect
 	github.com/antchfx/xmlquery v1.3.18 // indirect
@@ -27,8 +35,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect
-	golang.org/x/net v0.22.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect

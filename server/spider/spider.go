@@ -3,6 +3,7 @@ package spider
 import (
 	"fmt"
 	"gopkg.in/yaml.v3"
+	"gorm.io/gorm"
 	"log"
 	"net/url"
 	"os"
@@ -24,6 +25,7 @@ type SpiderDriver interface {
 	IsRequest(host string) bool
 	Crawl(*Resource, *sync.WaitGroup, clogs.LogInterface) error
 	GetConfig() (interface{}, string)
+	SetDB(*gorm.DB)
 }
 
 type Spider struct {
@@ -39,6 +41,7 @@ type Spider struct {
 	pool         *ants.Pool
 	driverConfig interface{}
 	wg           *sync.WaitGroup
+	db           *gorm.DB
 }
 
 func NewSpider(sd SpiderDriver, logDriver clogs.LogInterface, opts ...Option) (s *Spider) {
@@ -54,6 +57,9 @@ func NewSpider(sd SpiderDriver, logDriver clogs.LogInterface, opts ...Option) (s
 
 	for _, opt := range opts {
 		opt(s)
+	}
+	if s.db != nil {
+		sd.SetDB(s.db)
 	}
 
 	return
@@ -142,7 +148,6 @@ func (s *Spider) Start() (err error) {
 	c.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		host := e.Attr("href")
 		if !s.isOnce && s.sd.IsRequest(host) {
-			fmt.Println("抓取", host)
 			e.Request.Visit(host)
 		}
 	})

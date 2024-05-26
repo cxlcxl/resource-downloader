@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"gorm.io/gorm"
 	"net/url"
 	"os"
 	"path"
@@ -46,7 +47,9 @@ type RConfig struct {
 func (r *R) GetHost(c interface{}) string {
 	return c.(*RConfig).Host
 }
+func (r *R) SetDB(db *gorm.DB) {
 
+}
 func (r *R) GetConfig() (interface{}, string) {
 	r.downloadLogs = server.LoadDownloaded(r.DownloadLogFile)
 	return &RConfig{}, ConfigPath
