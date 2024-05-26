@@ -21,7 +21,9 @@ const (
 	VideoColumnOnline       = "online"
 	VideoColumnEpisodes     = "episodes"
 	VideoColumnEpisodesList = "episodes_list"
+)
 
+const (
 	PageMain spider.SpiderType = iota
 	PageVideoInfo
 	PageVideoUrl
