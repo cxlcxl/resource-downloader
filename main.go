@@ -19,11 +19,11 @@ func main() {
 	}
 	s, err := spider.NewSpider(
 		&new_vision.NewVision{
-			Log:             logDriver,
-			DownloadLogFile: path.Join(vars.BasePath, vars.Config.Video.SavePath, "nv", "log.log"),
+			Log:    logDriver,
+			DB:     db,
+			Config: &new_vision.NvConfig{},
 		},
 		logDriver,
-		spider.UseDb(db),
 	)
 	if err != nil {
 		log.Println(err)

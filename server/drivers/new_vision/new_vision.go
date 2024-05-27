@@ -17,10 +17,11 @@ import (
 )
 
 type NewVision struct {
-	Log             clogs.LogInterface
-	DownloadLogFile string
-	downloadLogs    map[string]bool
-	db              *gorm.DB
+	Log          clogs.LogInterface
+	LogFile      string
+	downloadLogs map[string]bool
+	DB           *gorm.DB
+	Config       *NvConfig
 }
 
 func (nv *NewVision) GetHost(c interface{}) string {
@@ -28,11 +29,7 @@ func (nv *NewVision) GetHost(c interface{}) string {
 }
 
 func (nv *NewVision) GetConfig() (interface{}, string) {
-	//nv.downloadLogs = server.LoadDownloaded(nv.DownloadLogFile)
 	return &NvConfig{}, ConfigPath
-}
-func (nv *NewVision) SetDB(db *gorm.DB) {
-	nv.db = db
 }
 
 func (nv *NewVision) IsRequest(host string) bool {
@@ -70,7 +67,7 @@ func (nv *NewVision) ParseResource(u *url.URL, body []byte, c interface{}) (*spi
 		if err != nil {
 			return nil, false, err
 		}
-		saveVideoInfo(nv.db, documents, u.String())
+		saveVideoInfo(nv.DB, documents, u.String())
 		fmt.Println("抓取完成：", u.String())
 	}
 	return nil, false, nil

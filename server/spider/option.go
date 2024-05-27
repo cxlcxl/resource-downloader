@@ -1,7 +1,5 @@
 package spider
 
-import "gorm.io/gorm"
-
 type Option func(*Spider)
 
 func SetAsync(limitGos int) Option {
@@ -27,11 +25,5 @@ func SetOnce(onceUrl string) Option {
 	return func(s *Spider) {
 		s.isOnce = true
 		s.onceUrl = onceUrl
-	}
-}
-
-func UseDb(db *gorm.DB) Option {
-	return func(s *Spider) {
-		s.db = db
 	}
 }
