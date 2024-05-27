@@ -12,35 +12,39 @@ import (
 )
 
 func main() {
-	crawlVideoSite()
-}
-
-func crawlVideoSite() {
 	logDriver := clogs.NewCLog()
 	db, err := model.NewDB()
 	if err != nil {
 		log.Fatalln("数据库连接失败：", err)
 	}
-	err = spider.NewSpider(
+	s, err := spider.NewSpider(
 		&new_vision.NewVision{
 			Log:             logDriver,
 			DownloadLogFile: path.Join(vars.BasePath, vars.Config.Video.SavePath, "nv", "log.log"),
 		},
 		logDriver,
 		spider.UseDb(db),
-	).Start()
+	)
+	if err != nil {
+		log.Println(err)
+	}
+	err = s.Start()
 	log.Println(err)
 }
 
 func crawlROne() {
 	logDriver := clogs.NewCLog()
-	err := spider.NewSpider(
+	s, err := spider.NewSpider(
 		&r_video.R{
 			Log:             logDriver,
 			DownloadLogFile: path.Join(vars.BasePath, vars.Config.Video.SavePath, "r", "log.log"),
 		},
 		logDriver,
-	).CrawlOne("单个url地址")
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = s.CrawlOne("单个url地址")
 	log.Println(err)
 
 	// logDriver := clogs.NewCLog()

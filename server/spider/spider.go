@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
-	"log"
 	"net/url"
 	"os"
 	"path"
@@ -44,7 +43,7 @@ type Spider struct {
 	db           *gorm.DB
 }
 
-func NewSpider(sd SpiderDriver, logDriver clogs.LogInterface, opts ...Option) (s *Spider) {
+func NewSpider(sd SpiderDriver, logDriver clogs.LogInterface, opts ...Option) (s *Spider, err error) {
 	s = &Spider{
 		sd:        sd,
 		maxSize:   50,
@@ -53,7 +52,9 @@ func NewSpider(sd SpiderDriver, logDriver clogs.LogInterface, opts ...Option) (s
 		userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 		wg:        &sync.WaitGroup{},
 	}
-	s.LoadConfig(sd.GetConfig())
+	if err = s.LoadConfig(sd.GetConfig()); err != nil {
+		return
+	}
 
 	for _, opt := range opts {
 		opt(s)
@@ -78,14 +79,6 @@ func (s *Spider) CrawlOne(host string) (err error) {
 		colly.AllowedDomains(u.Host),
 		colly.MaxBodySize(s.maxSize*1024*1024),
 	)
-
-	//c.OnHTML("a[href]", func(e *colly.HTMLElement) {
-	//	host := e.Attr("href")
-	//	if !s.isOnce && s.sd.IsRequest(host) {
-	//		fmt.Println("抓取", host)
-	//		e.Request.Visit(host)
-	//	}
-	//})
 
 	c.OnResponse(func(res *colly.Response) {
 		// 资源解析详情
@@ -189,24 +182,29 @@ func (s *Spider) Start() (err error) {
 	return
 }
 
-func (s *Spider) LoadConfig(configStruct interface{}, filePath string) {
-	if _, err := os.Stat(filePath); err != nil {
-		log.Fatal("驱动配置文件不存在:", filePath, err)
+func (s *Spider) LoadConfig(configStruct interface{}, filePath string) (err error) {
+	if _, err = os.Stat(filePath); err != nil {
+		s.logDriver.ErrLog(map[string]interface{}{"filepath": filePath, "error": err}, "驱动配置文件不存在")
+		return
 	}
 
 	if of := reflect.TypeOf(configStruct); of.Kind() != reflect.Pointer {
-		log.Fatal("非指针配置信息不可使用")
+		s.logDriver.ErrLog(map[string]interface{}{"filepath": filePath, "error": err}, "非指针配置信息不可使用")
+		return
 	}
 
 	yamlFile, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Fatal("驱动配置文件读取失败:", err)
+		s.logDriver.ErrLog(map[string]interface{}{"filepath": filePath, "error": err}, "驱动配置文件读取失败 [ReadFile]")
+		return
 	}
 
 	err = yaml.Unmarshal(yamlFile, configStruct)
 	if err != nil {
-		log.Fatal("驱动配置文件读取失败:", err)
+		s.logDriver.ErrLog(map[string]interface{}{"filepath": filePath, "error": err}, "驱动配置文件读取失败 [Unmarshal]")
+		return
 	}
 
 	s.driverConfig = configStruct
+	return
 }
