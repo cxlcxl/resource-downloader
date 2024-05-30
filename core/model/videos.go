@@ -6,16 +6,16 @@ import (
 )
 
 type Video struct {
-	VideoId     string `json:"video_id"`
-	VideoName   string `json:"video_name"`
-	VideoDesc   string `json:"video_desc"`
-	CoverImg    string `json:"cover_img"`
-	Actors      string `json:"actors"`
-	Directors   string `json:"directors"`
-	OnlineDate  string `json:"online_date"`
-	Episodes    string `json:"episodes"`
-	State       uint8  `json:"state"`
-	FromSiteUrl string `json:"from_site_url"`
+	VideoId     string `gorm:"column:video_id"`
+	VideoName   string `gorm:"column:video_name"`
+	VideoDesc   string `gorm:"column:video_desc"`
+	CoverImg    string `gorm:"column:cover_img"`
+	Actors      string `gorm:"column:actors"`
+	Directors   string `gorm:"column:directors"`
+	OnlineDate  string `gorm:"column:online_date"`
+	Episodes    string `gorm:"column:episodes"`
+	State       uint8  `gorm:"column:state"`
+	FromSiteUrl string `gorm:"column:from_site_url"`
 
 	Timestamp
 }

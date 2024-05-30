@@ -100,18 +100,18 @@ func (s *Spider) CrawlOne(host string) (err error) {
 	return
 }
 
-func (s *Spider) Start() (err error) {
+func (s *Spider) Run() {
 	crawlHost := s.sd.GetHost(s.driverConfig)
 	u, err := url.Parse(crawlHost)
 	if err != nil {
-		err = fmt.Errorf("抓取地址错误：%s", err.Error())
+		s.logDriver.ErrLog(map[string]interface{}{"url": crawlHost}, fmt.Sprintf("抓取地址错误：%s", err.Error()))
 		return
 	}
 
 	if s.Async {
 		s.pool, err = ants.NewPool(s.LimitGos)
 		if err != nil {
-			err = fmt.Errorf("协程池启动失败：%s", err.Error())
+			s.logDriver.ErrLog(map[string]interface{}{}, fmt.Sprintf("协程池启动失败：%s", err.Error()))
 			return
 		}
 		defer s.pool.Release()

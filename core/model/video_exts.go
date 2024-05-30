@@ -6,11 +6,11 @@ import (
 )
 
 type VideoExt struct {
-	VideoId   string `json:"video_id"`
-	ExtKey    string `json:"ext_key"`
-	ExtVal    string `json:"ext_val"`
-	State     uint8  `json:"state"`
-	ExtDetail string `json:"ext_detail"`
+	VideoId   string `gorm:"column:video_id"`
+	ExtKey    string `gorm:"column:ext_key"`
+	ExtVal    string `gorm:"column:ext_val"`
+	State     uint8  `gorm:"column:state"`
+	ExtDetail string `gorm:"column:ext_detail"`
 }
 
 func NewVideoExt() *VideoExt {
